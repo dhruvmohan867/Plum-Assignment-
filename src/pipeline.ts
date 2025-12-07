@@ -3,6 +3,15 @@ import { ocrImageToText, passthroughText } from "./ocr.js";
 import { extractEntities } from "./entities.js";
 import { normalizeEntities } from "./normalize.js";
 
+function aggregateConfidence(ocrConf: number, entitiesConf: number, normalizationConf: number): number {
+  // Conservative aggregation: use the minimum of the three steps
+  return Math.min(
+    Number.isFinite(ocrConf) ? ocrConf : 1,
+    Number.isFinite(entitiesConf) ? entitiesConf : 1,
+    Number.isFinite(normalizationConf) ? normalizationConf : 1
+  );
+}
+
 export async function processText(input: string, debug = false): Promise<FinalAppointment & any> {
   const ocr = passthroughText(input);
   const entities = extractEntities(ocr.raw_text);
@@ -14,12 +23,15 @@ export async function processText(input: string, debug = false): Promise<FinalAp
       : { status: "needs_clarification", message: normalized.message };
   }
 
+  const confidence = aggregateConfidence(ocr.confidence, entities.entities_confidence, normalized.normalization_confidence || 0.9);
+
   const response: any = {
     appointment: {
       department: entities.entities.department!,
       date: normalized.normalized!.date,
       time: normalized.normalized!.time,
-      tz: normalized.normalized!.tz
+      tz: normalized.normalized!.tz,
+      confidence
     },
     status: "ok"
   };
@@ -38,7 +50,6 @@ export async function processImage(buffer: Buffer, debug = false): Promise<Final
       ? { status: "needs_clarification", message: "OCR could not read the image", step1: ocr }
       : { status: "needs_clarification", message: "OCR could not read the image" };
   }
-
   const entities = extractEntities(ocr.raw_text);
   const normalized = normalizeEntities(ocr.raw_text, entities);
 
@@ -48,12 +59,15 @@ export async function processImage(buffer: Buffer, debug = false): Promise<Final
       : { status: "needs_clarification", message: normalized.message };
   }
 
+  const confidence = aggregateConfidence(ocr.confidence, entities.entities_confidence, normalized.normalization_confidence || 0.9);
+
   const response: any = {
     appointment: {
       department: entities.entities.department!,
       date: normalized.normalized!.date,
       time: normalized.normalized!.time,
-      tz: normalized.normalized!.tz
+      tz: normalized.normalized!.tz,
+      confidence
     },
     status: "ok"
   };
