@@ -6,25 +6,17 @@ const TZ = "Asia/Kolkata";
 export function normalizeEntities(inputText: string, entities: EntitiesResult): NormalizedResult | { status: "needs_clarification"; message: string } {
   const parsed = entities.entities.parsed;
   const timePhrase = entities.entities.time_phrase || "";
-
   if (!parsed) {
     return { status: "needs_clarification", message: "Ambiguous date phrase" };
   }
-
-  // Base DateTime in TZ using chrono's parsed date/time
   let dt = DateTime.fromJSDate(parsed.date).setZone(TZ);
-
-  // If hour wasn’t certain, only then try to apply timePhrase.
-  // Expect timePhrase standardized to HH:mm if chrono provided hour.
   if (!parsed.hasHour) {
-    // If timePhrase already normalized to HH:mm, parse directly
     const hhmm = timePhrase.match(/^(\d{1,2}):(\d{2})$/);
     if (hhmm) {
       const hour = parseInt(hhmm[1], 10);
       const minute = parseInt(hhmm[2], 10);
       dt = dt.set({ hour, minute });
     } else {
-      // As last resort, accept am/pm strings. Avoid changing 24h times incorrectly.
       const tm = timePhrase.match(/\b(\d{1,2})(?:[:\.](\d{2}))?\s*(am|pm)?\b/i);
       if (tm) {
         let hour = parseInt(tm[1], 10);
@@ -38,12 +30,10 @@ export function normalizeEntities(inputText: string, entities: EntitiesResult): 
       }
     }
   }
-
   const department = entities.entities.department;
   if (!department) {
     return { status: "needs_clarification", message: "Ambiguous or missing department" };
   }
-
   return {
     normalized: {
       date: dt.toFormat("yyyy-MM-dd"),

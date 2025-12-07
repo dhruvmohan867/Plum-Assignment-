@@ -1,8 +1,8 @@
 export type ParsedDateMatch = {
   text: string;
   index: number;
-  date: Date;       // JS Date parsed by chrono
-  hasHour: boolean; // whether hour was certain
+  date: Date;
+  hasHour: boolean;
 };
 
 export type OCRResult = {
@@ -12,9 +12,9 @@ export type OCRResult = {
 
 export type Entities = {
   date_phrase?: string;
-  time_phrase?: string;         // keep original phrase if present
+  time_phrase?: string;
   department?: string;
-  parsed?: ParsedDateMatch;     // carry parsed date/time
+  parsed?: ParsedDateMatch;
 };
 
 export type EntitiesResult = {
@@ -24,11 +24,16 @@ export type EntitiesResult = {
 
 export type NormalizedResult = {
   normalized?: {
-    date: string; // ISO yyyy-MM-dd
-    time: string; // HH:mm
-    tz: string;   // IANA timezone
+    date: string;
+    time: string;
+    tz: string;
   };
   normalization_confidence?: number;
+};
+
+export type Guardrail = {
+  status: "needs_clarification";
+  message: string;
 };
 
 export type FinalAppointment = {
@@ -37,7 +42,7 @@ export type FinalAppointment = {
     date: string;
     time: string;
     tz: string;
-    confidence?: number; // aggregated confidence
+    confidence?: number;
   };
   status: "ok" | "needs_clarification";
   message?: string;

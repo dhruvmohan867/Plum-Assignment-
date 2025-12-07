@@ -11,7 +11,6 @@ app.post("/schedule/text", async (req, res) => {
   const text = (req.body?.text || "").trim();
   const debug = String(req.query.debug || "").toLowerCase() === "true";
   if (!text) return res.status(400).json({ status: "needs_clarification", message: "No text provided" });
-
   try {
     const result = await processText(text, debug);
     return res.json(result);
@@ -23,7 +22,6 @@ app.post("/schedule/text", async (req, res) => {
 app.post("/schedule/image", upload.single("file"), async (req, res) => {
   const debug = String(req.query.debug || "").toLowerCase() === "true";
   if (!req.file?.buffer) return res.status(400).json({ status: "needs_clarification", message: "No image provided" });
-
   try {
     const result = await processImage(req.file.buffer, debug);
     return res.json(result);

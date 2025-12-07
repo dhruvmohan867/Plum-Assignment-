@@ -4,7 +4,6 @@ import { extractEntities } from "./entities.js";
 import { normalizeEntities } from "./normalize.js";
 
 function aggregateConfidence(ocrConf: number, entitiesConf: number, normalizationConf: number): number {
-  // Conservative aggregation: use the minimum of the three steps
   return Math.min(
     Number.isFinite(ocrConf) ? ocrConf : 1,
     Number.isFinite(entitiesConf) ? entitiesConf : 1,
@@ -16,15 +15,12 @@ export async function processText(input: string, debug = false): Promise<FinalAp
   const ocr = passthroughText(input);
   const entities = extractEntities(ocr.raw_text);
   const normalized = normalizeEntities(ocr.raw_text, entities);
-
   if ("status" in normalized) {
     return debug
       ? { status: "needs_clarification", message: normalized.message, step1: ocr, step2: entities }
       : { status: "needs_clarification", message: normalized.message };
   }
-
   const confidence = aggregateConfidence(ocr.confidence, entities.entities_confidence, normalized.normalization_confidence || 0.9);
-
   const response: any = {
     appointment: {
       department: entities.entities.department!,
@@ -52,15 +48,12 @@ export async function processImage(buffer: Buffer, debug = false): Promise<Final
   }
   const entities = extractEntities(ocr.raw_text);
   const normalized = normalizeEntities(ocr.raw_text, entities);
-
   if ("status" in normalized) {
     return debug
       ? { status: "needs_clarification", message: normalized.message, step1: ocr, step2: entities }
       : { status: "needs_clarification", message: normalized.message };
   }
-
   const confidence = aggregateConfidence(ocr.confidence, entities.entities_confidence, normalized.normalization_confidence || 0.9);
-
   const response: any = {
     appointment: {
       department: entities.entities.department!,
