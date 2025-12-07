@@ -1,26 +1,21 @@
 import { DateTime } from "luxon";
-import * as chrono from "chrono-node";
-import type { EntitiesResult, NormalizedResult } from "./types.js";
+import type { EntitiesResult, NormalizedResult } from "./types";
 
 const TZ = "Asia/Kolkata";
 
 export function normalizeEntities(inputText: string, entities: EntitiesResult): NormalizedResult | { status: "needs_clarification"; message: string } {
-  const phrase = entities.entities.date_phrase || "";
   const timePhrase = entities.entities.time_phrase || "";
+  const parsed = entities.entities.parsed;
 
-  const baseNow = DateTime.now().setZone(TZ);
-  const baseDate = new Date(baseNow.toISO());
-
-  const parsed = chrono.parse(phrase || inputText, baseDate, { forwardDate: true });
-  if (parsed.length === 0) {
+  // If we don't have a parsed date from entities, we can’t reliably normalize
+  if (!parsed) {
     return { status: "needs_clarification", message: "Ambiguous date phrase" };
   }
 
-  const r = parsed[0];
-  let dt = DateTime.fromJSDate(r.start.date()).setZone(TZ);
+  let dt = DateTime.fromJSDate(parsed.date).setZone(TZ);
 
-  // If time not certain, try to apply from timePhrase
-  if (!r.start.isCertain("hour")) {
+  // If time not certain in parsed result, try to apply from timePhrase
+  if (!parsed.hasHour) {
     const tm = timePhrase.match(/\b(\d{1,2})(?:[:\.](\d{2}))?\s*(am|pm)?\b/);
     if (tm) {
       let hour = parseInt(tm[1], 10);
@@ -32,8 +27,6 @@ export function normalizeEntities(inputText: string, entities: EntitiesResult): 
     } else {
       return { status: "needs_clarification", message: "Ambiguous time" };
     }
-  } else {
-    dt = DateTime.fromJSDate(r.start.date()).setZone(TZ);
   }
 
   const department = entities.entities.department;

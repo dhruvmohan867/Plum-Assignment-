@@ -3,10 +3,18 @@ export type OCRResult = {
   confidence: number;
 };
 
+export type ParsedDateMatch = {
+  text: string;
+  index: number;
+  date: Date; // JS Date parsed by chrono
+  hasHour: boolean;
+};
+
 export type Entities = {
   date_phrase?: string;
   time_phrase?: string;
   department?: string;
+  parsed?: ParsedDateMatch; // carry chrono result forward
 };
 
 export type EntitiesResult = {
